@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Node
+node_modules/
+dist/
+.env
+
+# Local DB & Data
+*.db
+powershell.bat
+coe materials/
+coe_materials/
+
+# Workspace files
+.DS_Store
+Thumbs.db
