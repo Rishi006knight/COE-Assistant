@@ -53,10 +53,16 @@
 }
 
 /* Base Reset */
-* {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -65,7 +71,6 @@ body {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.6;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -76,7 +81,8 @@ body {
 
 .app-container {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary);
@@ -362,20 +368,27 @@ body {
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--header-height));
+  min-height: 0;
   overflow: hidden;
 }
 
 .view-container {
   flex: 1;
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 2rem;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
 }
 
 .query-workspace {
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 1.5rem;
+  flex: 1;
   height: 100%;
+  min-height: 0;
 }
 
 /* ==========================================================================
@@ -385,9 +398,10 @@ body {
 .query-config-panel {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1rem;
   padding: 1.4rem;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   animation: fadeInLeft 0.5s ease-out;
 }
@@ -629,6 +643,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   padding: 0;
   animation: fadeInRight 0.5s ease-out;
@@ -864,7 +879,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  flex: 1;
+  min-height: 280px;
   text-align: center;
   padding: 2rem;
   color: var(--text-secondary);
