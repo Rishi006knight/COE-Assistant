@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://coe-automator-api.onrender.com/api/:path*"
+      "destination": "https://coe-assistant-skgz.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
