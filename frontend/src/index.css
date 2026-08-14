@@ -224,6 +224,7 @@ body {
   position: relative;
   z-index: 10;
   height: var(--header-height);
+  flex-shrink: 0;
   padding: 0 2rem;
   display: flex;
   align-items: center;
@@ -232,7 +233,6 @@ body {
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   border-bottom: 1px solid var(--glass-border);
-  animation: slideDown 0.4s ease-out;
 }
 
 .header-brand {
@@ -369,6 +369,7 @@ body {
   flex-direction: column;
   height: calc(100vh - var(--header-height));
   min-height: 0;
+  max-height: calc(100vh - var(--header-height));
   overflow: hidden;
 }
 
@@ -380,6 +381,7 @@ body {
   flex-direction: column;
   min-height: 0;
   height: 100%;
+  max-height: 100%;
 }
 
 .query-workspace {
@@ -389,6 +391,8 @@ body {
   flex: 1;
   height: 100%;
   min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -402,8 +406,8 @@ body {
   padding: 1.4rem;
   height: 100%;
   min-height: 0;
+  max-height: 100%;
   overflow: hidden;
-  animation: fadeInLeft 0.5s ease-out;
 }
 
 .panel-header {
@@ -644,9 +648,9 @@ body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  max-height: 100%;
   overflow: hidden;
   padding: 0;
-  animation: fadeInRight 0.5s ease-out;
 }
 
 /* Active Context Top Bar */
