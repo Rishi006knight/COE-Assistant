@@ -260,8 +260,7 @@ export default function App() {
 
       {/* Main Single Page Workspace */}
       <main className="main-content">
-        <div className="view-container">
-          <div className="query-workspace">
+        <div className="query-workspace">
             
             {/* Left Configuration Panel (Glass Card) */}
             <aside className="query-config-panel glass-card">
@@ -572,9 +571,7 @@ export default function App() {
               </form>
 
             </section>
-
           </div>
-        </div>
       </main>
     </div>
   )
