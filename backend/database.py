@@ -12,10 +12,19 @@ def is_read_query(query: str) -> bool:
 # Circuit breaker flag to disable cloud DB calls if connection fails
 CLOUD_ACTIVE = True
 
+def get_cloud_db_url(raw_url: str) -> str:
+    if not raw_url:
+        return ""
+    cleaned = raw_url.strip()
+    # Convert libsql:// to https:// so libsql_client uses reliable HTTP Hrana instead of WebSockets
+    if cleaned.startswith("libsql://"):
+        return "https://" + cleaned[len("libsql://"):]
+    return cleaned
+
 # Helper to execute queries on both local and cloud databases
 async def execute_query(query: str, params: list = None):
     global CLOUD_ACTIVE
-    use_cloud = CLOUD_ACTIVE and DATABASE_URL and DATABASE_URL.startswith("libsql://")
+    use_cloud = CLOUD_ACTIVE and DATABASE_URL and (DATABASE_URL.startswith("libsql://") or DATABASE_URL.startswith("https://"))
     
     cloud_result = None
     cloud_success = False
@@ -23,8 +32,9 @@ async def execute_query(query: str, params: list = None):
     # 1. Try executing on Cloud Turso DB if configured
     if use_cloud:
         try:
-            token = DATABASE_AUTH_TOKEN if DATABASE_AUTH_TOKEN else None
-            client = libsql_client.create_client(url=DATABASE_URL, auth_token=token)
+            token = DATABASE_AUTH_TOKEN.strip() if DATABASE_AUTH_TOKEN else None
+            cloud_url = get_cloud_db_url(DATABASE_URL)
+            client = libsql_client.create_client(url=cloud_url, auth_token=token)
             try:
                 cloud_result = await client.execute(query, params or [])
                 cloud_success = True
@@ -55,7 +65,7 @@ async def execute_query(query: str, params: list = None):
 # Batch execute multiple queries
 async def execute_batch(queries_with_params: list):
     global CLOUD_ACTIVE
-    use_cloud = CLOUD_ACTIVE and DATABASE_URL and DATABASE_URL.startswith("libsql://")
+    use_cloud = CLOUD_ACTIVE and DATABASE_URL and (DATABASE_URL.startswith("libsql://") or DATABASE_URL.startswith("https://"))
     
     cloud_results = None
     cloud_success = False
@@ -63,8 +73,9 @@ async def execute_batch(queries_with_params: list):
     # 1. Try Cloud DB
     if use_cloud:
         try:
-            token = DATABASE_AUTH_TOKEN if DATABASE_AUTH_TOKEN else None
-            client = libsql_client.create_client(url=DATABASE_URL, auth_token=token)
+            token = DATABASE_AUTH_TOKEN.strip() if DATABASE_AUTH_TOKEN else None
+            cloud_url = get_cloud_db_url(DATABASE_URL)
+            client = libsql_client.create_client(url=cloud_url, auth_token=token)
             try:
                 results = []
                 for query, params in queries_with_params:
