@@ -378,6 +378,21 @@ export default function App() {
                         </div>
                       </div>
                       
+                      {/* Syllabus option */}
+                      <div 
+                        className={`course-selector-item ${selectedCourse === 'SYLLABUS' ? 'active' : ''}`}
+                        onClick={() => {
+                          setSelectedCourse('SYLLABUS')
+                          setAnalysis(null)
+                          setError(null)
+                        }}
+                      >
+                        <div className="course-item-info">
+                          <span className="course-item-name">📚 Syllabus Queries</span>
+                          <span className="course-item-desc">Query curriculum, unit topics & syllabi from official PDFs</span>
+                        </div>
+                      </div>
+                      
                       {/* Filtered course list */}
                       {courses
                         .filter(c => {
@@ -414,7 +429,11 @@ export default function App() {
                       className="form-control"
                       rows={5}
                       style={{ resize: 'vertical' }}
-                      placeholder="Type your question... (e.g. 'Explain HTTP session tracking mechanisms', 'TCP vs UDP', or 'repeated questions for Unit 1')"
+                      placeholder={
+                        selectedCourse === 'SYLLABUS'
+                          ? "Type your syllabus query... (e.g. 'Show unit topics for CS3491', 'What is the syllabus for Web Technology?', or 'List topics in Unit 2 of DBMS')"
+                          : "Type your question... (e.g. 'Explain HTTP session tracking mechanisms', 'TCP vs UDP', or 'repeated questions for Unit 1')"
+                      }
                       value={portionQuery}
                       onChange={(e) => setPortionQuery(e.target.value)}
                       required
@@ -425,7 +444,19 @@ export default function App() {
                   <div className="form-group">
                     <label>Quick Query Presets</label>
                     <div className="preset-container">
-                      {selectedCourse ? (
+                      {selectedCourse === 'SYLLABUS' ? (
+                        <>
+                          <button type="button" className="preset-btn" onClick={() => applyPreset('Show syllabus overview for Computer Science engineering R2024')}>
+                            📚 Syllabus Overview for CSE R2024
+                          </button>
+                          <button type="button" className="preset-btn" onClick={() => applyPreset('What are the unit-wise topics for Computer Networks?')}>
+                            📚 Unit topics for Computer Networks
+                          </button>
+                          <button type="button" className="preset-btn" onClick={() => applyPreset('Explain core concepts and topics in Unit 1 of Operating Systems')}>
+                            📚 Unit 1 topics for Operating Systems
+                          </button>
+                        </>
+                      ) : selectedCourse ? (
                         <>
                           <button type="button" className="preset-btn" onClick={() => applyPreset('Identify all repeated questions in Part A & B')}>
                             📊 Repeated questions in Part A & B
@@ -472,7 +503,12 @@ export default function App() {
                 {/* Active Chat Context Header */}
                 <div className="active-context-header">
                   <div className="active-context-title">
-                    {selectedCourse ? (
+                    {selectedCourse === 'SYLLABUS' ? (
+                      <>
+                        <span className="active-context-badge syllabus">Syllabus Mode</span>
+                        <span>Curriculum & Syllabus AI Assistant</span>
+                      </>
+                    ) : selectedCourse ? (
                       <>
                         <span className="active-context-badge">{selectedCourse}</span>
                         <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '300px' }}>
@@ -514,10 +550,16 @@ export default function App() {
 
                   {!isLoading && !analysis && !error && (
                     <div className="output-placeholder">
-                      <div className="output-placeholder-icon">🤖</div>
-                      <h3>AI Agent Tutor Workspace</h3>
+                      <div className="output-placeholder-icon">
+                        {selectedCourse === 'SYLLABUS' ? '📚' : '🤖'}
+                      </div>
+                      <h3>
+                        {selectedCourse === 'SYLLABUS' ? 'Syllabus AI Agent Workspace' : 'AI Agent Tutor Workspace'}
+                      </h3>
                       <p style={{ maxWidth: '400px', fontSize: '0.9rem' }}>
-                        Ask any academic question on the left. If you select a course context, the AI will use the curriculum syllabus and previous years' question papers to answer your query. If you choose General Chat, the AI will act as a general tutor and answer directly!
+                        {selectedCourse === 'SYLLABUS'
+                          ? "Ask any curriculum or syllabus related question on the left. The AI will search official Curriculum & Syllabus PDFs to provide exact unit breakdowns, topic details, and course objectives."
+                          : "Ask any academic question on the left. If you select a course context, the AI will use the curriculum syllabus and previous years' question papers to answer your query. If you choose General Chat, the AI will act as a general tutor and answer directly!"}
                       </p>
                     </div>
                   )}

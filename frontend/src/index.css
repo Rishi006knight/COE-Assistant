@@ -791,6 +791,12 @@ body {
   border-color: rgba(168, 85, 247, 0.25);
 }
 
+.active-context-badge.syllabus {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
 .output-console {
   flex-grow: 1;
   background-color: rgba(10, 11, 18, 0.8);

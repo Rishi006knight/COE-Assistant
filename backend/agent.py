@@ -278,9 +278,9 @@ async def resolve_course_codes_for_query(query_text: str) -> list:
     print(f"Final resolved course codes: {resolved_codes}")
     return resolved_codes
 
-async def search_files_in_folder(query_text: str, limit: int = 3, course_code: str = None) -> str:
+async def search_files_in_folder(query_text: str, limit: int = 3, course_code: str = None, target_subfolder: str = None) -> str:
     """
-    Scans the coe materials folder for PDFs matching the query keywords and resolved course codes,
+    Scans the coe materials folder (or target subfolder like 'curriculum and syllabus') for PDFs matching the query keywords and resolved course codes,
     extracts their text, and returns them as a combined context.
     """
     t_start = time.time()
@@ -294,7 +294,7 @@ async def search_files_in_folder(query_text: str, limit: int = 3, course_code: s
         
     # 1. Resolve course codes
     t_res_start = time.time()
-    if course_code:
+    if course_code and course_code != "SYLLABUS":
         resolved_codes = [course_code.upper()]
     else:
         resolved_codes = await resolve_course_codes_for_query(query_text)
@@ -318,32 +318,38 @@ async def search_files_in_folder(query_text: str, limit: int = 3, course_code: s
     
     # 3. Determine target subdirectories to scan (Optimized)
     t_walk_start = time.time()
-    qp_dir = materials_dir / "question paper"
     scan_dirs = []
-    if qp_dir.exists():
-        if resolved_codes:
-            for code in resolved_codes:
-                prefix = code[:3].upper()
-                for item in qp_dir.iterdir():
-                    if item.is_dir():
-                        item_name = item.name.upper()
-                        if item_name.startswith(prefix) or item_name == prefix:
+    if target_subfolder:
+        target_dir = materials_dir / target_subfolder
+        if target_dir.exists():
+            scan_dirs = [target_dir]
+            
+    if not scan_dirs:
+        qp_dir = materials_dir / "question paper"
+        if qp_dir.exists():
+            if resolved_codes:
+                for code in resolved_codes:
+                    prefix = code[:3].upper()
+                    for item in qp_dir.iterdir():
+                        if item.is_dir():
+                            item_name = item.name.upper()
+                            if item_name.startswith(prefix) or item_name == prefix:
+                                if item not in scan_dirs:
+                                    scan_dirs.append(item)
+            
+            # If no specific directories resolved, check keywords to match folder names
+            if not scan_dirs and keywords:
+                for kw in keywords:
+                    for item in qp_dir.iterdir():
+                        if item.is_dir() and kw in item.name.lower():
                             if item not in scan_dirs:
                                 scan_dirs.append(item)
-        
-        # If no specific directories resolved, check keywords to match folder names
-        if not scan_dirs and keywords:
-            for kw in keywords:
-                for item in qp_dir.iterdir():
-                    if item.is_dir() and kw in item.name.lower():
-                        if item not in scan_dirs:
-                            scan_dirs.append(item)
-                            
-        # Fallback to whole directory if nothing matched
-        if not scan_dirs:
-            scan_dirs = [materials_dir]
-            
-    print(f"Optimized search walking only inside: {[d.name for d in scan_dirs]}")
+                                
+            # Fallback to whole directory if nothing matched
+            if not scan_dirs:
+                scan_dirs = [materials_dir]
+                
+    print(f"Optimized search walking inside: {[d.name for d in scan_dirs]}")
     
     # Recursively find matching PDFs only in selected directories
     for s_dir in scan_dirs:
@@ -434,6 +440,67 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
             "course_code": None,
             "course_name": "General Chat",
             "portion_analyzed": "N/A",
+            "analysis": analysis_result,
+            "provider": provider
+        }
+
+    # 0.5. Check for Syllabus Query Mode
+    if course_code == "SYLLABUS":
+        folder_context = await search_files_in_folder(portion_query, limit=5, target_subfolder="curriculum and syllabus")
+        
+        db_syllabus_context = ""
+        try:
+            db_res = await execute_query("""
+                SELECT cp.course_code, c.course_name, cp.unit_number, cp.unit_title, cp.unit_content 
+                FROM course_portions cp 
+                JOIN courses c ON cp.course_code = c.course_code 
+                WHERE cp.unit_title LIKE ? OR cp.unit_content LIKE ? OR c.course_name LIKE ? OR cp.course_code LIKE ?
+                LIMIT 10
+            """, [f"%{portion_query}%", f"%{portion_query}%", f"%{portion_query}%", f"%{portion_query}%"])
+            if db_res and db_res.rows:
+                db_syllabus_context = "### Database Syllabus Units Context\n"
+                for row in db_res.rows:
+                    db_syllabus_context += f"Course: {row[0]} - {row[1]} | Unit {row[2]}: {row[3]}\nContent: {row[4]}\n\n"
+        except Exception as dbe:
+            print(f"Error querying syllabus from DB: {dbe}")
+            
+        prompt = "You are an expert academic curriculum and syllabus advisor.\n\n"
+        if db_syllabus_context:
+            prompt += f"{db_syllabus_context}\n"
+        if folder_context:
+            prompt += f"{folder_context}\n\n"
+            prompt += "The above text was extracted directly from the official curriculum and syllabus PDFs in the 'curriculum and syllabus' folder.\n\n"
+            
+        prompt += f"User Syllabus Query: {portion_query}\n\n"
+        prompt += (
+            "Please answer the user's syllabus-related query comprehensively and clearly. "
+            "Focus on unit topic breakdowns, course objectives, learning outcomes, credit distribution, and syllabus topics where applicable. "
+            "Organize your response with clear Markdown headings, bullet points, and unit details."
+        )
+        
+        provider = "Google Gemini"
+        analysis_result = ""
+        t_api_start = time.time()
+        try:
+            print("Calling Gemini API for syllabus query...")
+            analysis_result = await asyncio.to_thread(call_gemini_api, prompt)
+            print(f"[Time Log] Gemini API execution took {time.time() - t_api_start:.4f} seconds")
+        except Exception as e:
+            print(f"Gemini API failed: {e}. Falling back to OpenAI (gpt-4o-mini)...")
+            try:
+                t_openai_start = time.time()
+                analysis_result = await asyncio.to_thread(call_openai_api, prompt)
+                provider = "OpenAI (Fallback)"
+                print(f"[Time Log] OpenAI API execution took {time.time() - t_openai_start:.4f} seconds")
+            except Exception as oe:
+                print(f"OpenAI API fallback also failed: {oe}")
+                analysis_result = f"Error: Both AI services failed.\n\nGemini Error: {e}\n\nOpenAI Error: {oe}"
+                provider = "None"
+                
+        return {
+            "course_code": "SYLLABUS",
+            "course_name": "Curriculum & Syllabus Assistant",
+            "portion_analyzed": portion_query,
             "analysis": analysis_result,
             "provider": provider
         }
