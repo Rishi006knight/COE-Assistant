@@ -202,29 +202,29 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Layer 2: Ambient Glowing Blobs */}
-      <div className="ambient-blob ambient-blob-1"></div>
-      <div className="ambient-blob ambient-blob-2"></div>
-
-      {/* Layer 3: Ambient LED Particles */}
-      <div className="particles-container">
-        {ambientParticles.map((p, idx) => (
-          <div 
-            key={idx}
-            className={`ambient-particle ${p.type}`}
-            style={{
-              top: p.top,
-              left: p.left,
-              width: p.type === 'plus' ? 'auto' : `${p.size}px`,
-              height: p.type === 'plus' ? 'auto' : `${p.size}px`,
-              '--dx': `${p.dx}px`,
-              '--dy': `${p.dy}px`,
-              animationDuration: `${p.dur}s`
-            }}
-          >
-            {p.type === 'plus' ? '+' : ''}
-          </div>
-        ))}
+      {/* Background Layers isolated in fixed container */}
+      <div className="app-background">
+        <div className="ambient-blob ambient-blob-1"></div>
+        <div className="ambient-blob ambient-blob-2"></div>
+        <div className="particles-container">
+          {ambientParticles.map((p, idx) => (
+            <div 
+              key={idx}
+              className={`ambient-particle ${p.type}`}
+              style={{
+                top: p.top,
+                left: p.left,
+                width: p.type === 'plus' ? 'auto' : `${p.size}px`,
+                height: p.type === 'plus' ? 'auto' : `${p.size}px`,
+                '--dx': `${p.dx}px`,
+                '--dy': `${p.dy}px`,
+                animationDuration: `${p.dur}s`
+              }}
+            >
+              {p.type === 'plus' ? '+' : ''}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Top Header */}

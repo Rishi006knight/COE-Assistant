@@ -82,6 +82,17 @@ body {
    BACKGROUND LAYERS (Warm Charcoal + Circuit Pattern + Glow Blobs + Ambient LEDs)
    ========================================================================== */
 
+.app-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
 .app-container {
   position: relative;
   height: 100vh;
@@ -90,7 +101,6 @@ body {
   display: flex;
   flex-direction: column;
   background-color: var(--bg-primary);
-  overflow: hidden;
   /* Layer 1: Circuit Board PCB Blueprint Pattern (3% opacity) */
   background-image: 
     radial-gradient(ellipse at 15% 15%, rgba(20, 184, 166, 0.08) 0%, transparent 45%),
@@ -98,6 +108,7 @@ body {
     url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10h30v30H10zM70 10h40v20H70zM10 70h20v40H10zM50 70h60v40H50z' fill='none' stroke='rgba(255,255,255,0.025)' stroke-width='1'/%3E%3Cpath d='M40 25h30M20 40v30M90 30v40M30 90h20M70 50h40M50 20v30M10 110h100' fill='none' stroke='rgba(20,184,166,0.035)' stroke-width='1' stroke-dasharray='2,6'/%3E%3Ccircle cx='40' cy='25' r='2' fill='rgba(20,184,166,0.05)'/%3E%3Ccircle cx='20' cy='70' r='2' fill='rgba(16,185,129,0.05)'/%3E%3Ccircle cx='90' cy='70' r='2' fill='rgba(20,184,166,0.05)'/%3E%3C/svg%3E");
   background-attachment: fixed;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* Ambient Pulsing Glow Blobs (Layer 2) */
@@ -228,13 +239,15 @@ body {
 .top-header {
   position: relative;
   z-index: 10;
-  height: var(--header-height);
-  flex-shrink: 0;
+  height: 68px;
+  min-height: 68px;
+  max-height: 68px;
+  flex: 0 0 68px;
   padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(18, 18, 21, 0.75);
+  background: rgba(18, 18, 21, 0.85);
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   border-bottom: 1px solid var(--glass-border);
@@ -369,7 +382,9 @@ body {
 .main-content {
   position: relative;
   z-index: 2;
-  flex: 1 1 0%;
+  flex: 1 1 auto;
+  height: calc(100vh - 68px);
+  max-height: calc(100vh - 68px);
   min-height: 0;
   padding: 1.25rem 2rem;
   display: flex;
@@ -381,8 +396,9 @@ body {
   display: grid;
   grid-template-columns: 380px 1fr;
   gap: 1.5rem;
-  flex: 1 1 0%;
+  flex: 1 1 auto;
   height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
 }
