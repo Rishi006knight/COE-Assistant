@@ -22,6 +22,7 @@ export default function App() {
   const [courseSearchQuery, setCourseSearchQuery] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('All')
   const [portionQuery, setPortionQuery] = useState('')
+  const [isCoursesExpanded, setIsCoursesExpanded] = useState(false)
   
   // Chat History: array of { id, sender: 'user'|'ai', text: string, provider?: string, timestamp: string }
   const [messages, setMessages] = useState([])
@@ -320,27 +321,100 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Course Pills Scroll Grid */}
-              <div className="courses-grid-header">
-                Courses ({filteredCourses.length})
-              </div>
-              <div className="courses-scroll-area">
-                {filteredCourses.map((c) => (
-                  <div 
-                    key={c.course_code}
-                    className={`course-pill ${selectedCourse === c.course_code ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedCourse(c.course_code)
-                      setError(null)
-                    }}
-                  >
-                    <span className="pill-code">{c.course_code}</span>
-                    <div className="pill-info">
-                      <span className="pill-name" title={c.course_name}>{c.course_name}</span>
-                      <span className="pill-dept">{c.department || 'Engineering'}</span>
-                    </div>
+              {/* Active Selected Course Chip (If a course was selected from search) */}
+              {selectedCourse && selectedCourse !== 'SYLLABUS' && (
+                <div style={{ marginTop: '0.2rem' }}>
+                  <div className="courses-grid-header" style={{ marginBottom: '0.35rem', color: 'var(--teal-light)' }}>
+                    Active Subject Filter
                   </div>
-                ))}
+                  <div className="course-pill active" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                      <span className="pill-code">{selectedCourse}</span>
+                      <div className="pill-info">
+                        <span className="pill-name">{currentCourseObj?.course_name || selectedCourse}</span>
+                      </div>
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={(e) => { e.stopPropagation(); setSelectedCourse(''); }}
+                      title="Clear course filter"
+                      style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem', padding: '0.2rem 0.4rem' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Search-Only Course Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, marginTop: '0.3rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                  <span className="courses-grid-header">
+                    {courseSearchQuery.trim() || selectedDepartment !== 'All'
+                      ? `Matching Courses (${filteredCourses.length})` 
+                      : 'Course Search'}
+                  </span>
+                  {!courseSearchQuery.trim() && selectedDepartment === 'All' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCoursesExpanded(prev => !prev)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--teal-light)',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      {isCoursesExpanded ? '▲ Hide All' : `▼ Browse All (${courses.length})`}
+                    </button>
+                  )}
+                </div>
+
+                {/* Show courses when actively searching, filtering, or explicitly expanded */}
+                {(courseSearchQuery.trim() || selectedDepartment !== 'All' || isCoursesExpanded) ? (
+                  <div className="courses-scroll-area">
+                    {filteredCourses.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        No courses match "{courseSearchQuery}"
+                      </div>
+                    ) : (
+                      filteredCourses.map((c) => (
+                        <div 
+                          key={c.course_code}
+                          className={`course-pill ${selectedCourse === c.course_code ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedCourse(c.course_code)
+                            setError(null)
+                          }}
+                        >
+                          <span className="pill-code">{c.course_code}</span>
+                          <div className="pill-info">
+                            <span className="pill-name" title={c.course_name}>{c.course_name}</span>
+                            <span className="pill-dept">{c.department || 'Engineering'}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '1.2rem 1rem',
+                    textAlign: 'center',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    border: '1px dashed rgba(255, 255, 255, 0.06)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.78rem',
+                    lineHeight: 1.5,
+                    marginTop: '0.2rem'
+                  }}>
+                    🔍 Type in search bar above to instantly find any of the {courses.length} courses
+                  </div>
+                )}
               </div>
             </aside>
 
