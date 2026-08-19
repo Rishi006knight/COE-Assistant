@@ -43,11 +43,32 @@ export default function App() {
     chatStreamEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
 
+  // Helper to safely parse JSON responses or provide friendly server wake-up errors
+  const parseJsonResponse = async (res) => {
+    const text = await res.text()
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch {
+      if (!res.ok) {
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          throw new Error(`The backend server is spinning up or temporarily waking up (HTTP ${res.status}). Please retry in 10-15 seconds.`)
+        }
+        throw new Error(`Server returned HTTP ${res.status} error (${res.statusText || 'Service Unavailable'}).`)
+      }
+      throw new Error('Received an HTML page instead of JSON. The backend server may still be booting up.')
+    }
+    if (!res.ok) {
+      throw new Error(data?.detail || `Server request failed with status ${res.status}`)
+    }
+    return data
+  }
+
   // Fetch status & stats
   const fetchStatus = async () => {
     try {
       const res = await fetch('/api/status')
-      const data = await res.json()
+      const data = await parseJsonResponse(res)
       setStatus(data)
       
       if (data.is_indexing) {
@@ -62,7 +83,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error("Error fetching status:", err)
+      console.warn("Status fetch:", err.message)
     }
   }
 
@@ -70,10 +91,10 @@ export default function App() {
   const fetchCourses = async () => {
     try {
       const res = await fetch('/api/courses')
-      const data = await res.json()
+      const data = await parseJsonResponse(res)
       setCourses(data.courses || [])
     } catch (err) {
-      console.error("Error fetching courses:", err)
+      console.warn("Courses fetch:", err.message)
     }
   }
 
@@ -82,7 +103,7 @@ export default function App() {
     if (status.is_indexing) return
     try {
       const res = await fetch('/api/ingest', { method: 'POST' })
-      const data = await res.json()
+      const data = await parseJsonResponse(res)
       if (data.status === 'started') {
         setStatus(prev => ({
           ...prev,
@@ -94,7 +115,7 @@ export default function App() {
         }
       }
     } catch (err) {
-      console.error("Error triggering indexing:", err)
+      console.error("Error triggering indexing:", err.message)
     }
   }
 
@@ -132,12 +153,7 @@ export default function App() {
         })
       })
       
-      if (!res.ok) {
-        const errData = await res.json()
-        throw new Error(errData.detail || "Failed to analyze questions.")
-      }
-
-      const data = await res.json()
+      const data = await parseJsonResponse(res)
       
       // Add AI response to stream
       const aiMessage = {
@@ -154,7 +170,7 @@ export default function App() {
       const errorMsg = {
         id: Date.now() + 1,
         sender: 'ai',
-        text: `⚠️ **Error occurred**: ${err.message}`,
+        text: `⚠️ **Server / Connection Notice**: ${err.message}`,
         provider: 'System',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
