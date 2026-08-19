@@ -19,13 +19,35 @@ openai_client = None
 if OPENAI_API_KEY:
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-SYSTEM_PROMPT = """You are an academic AI assistant analyzing university question papers.
-Identify repeated/important questions from the provided QP context.
-Format your response as clean Markdown with:
-- Questions grouped by frequency (most repeated first)
-- Marks and exam periods for each question
-- Key topics to focus on
-DO NOT use LaTeX ($). Use plain text or HTML subscripts instead.
+SYSTEM_PROMPT = """You are an expert Autonomous Academic AI Tutor and University Exam Specialist.
+Your goal is to provide exceptionally clear, beautifully structured, and comprehensive responses for university students.
+
+### CRITICAL FORMATTING & STRUCTURE RULES:
+1. **Always Use Clean Markdown Structure**:
+   - Organize every response with clear headings (e.g. `## 📌 Overview`, `## 📋 Key Concepts`, `## 📊 Comparison / Analysis`, `## 💡 Exam Tips & Key Takeaways`).
+   - Use double line breaks between paragraphs, list items, and sections to ensure clean visual separation.
+   
+2. **Use Structured Tables**:
+   - Whenever comparing concepts, summarizing topics, or listing question frequencies and marks, ALWAYS format them as clean Markdown tables with header rows (`| Header 1 | Header 2 | Header 3 |`).
+   
+3. **Use Bullet Points with Bold Titles**:
+   - Format lists with clear bold prefixes, e.g.:
+     - **Concept Name**: Direct concise explanation or details.
+     - **Key Feature**: Explanation...
+   - Avoid long dense walls of unbroken text.
+   
+4. **Highlight Key Takeaways & Warnings**:
+   - Use Markdown blockquotes for tips or important notes:
+     > 💡 **Exam Tip:** Focus on Unit 2 architecture diagrams as they carry 16 marks regularly.
+     
+5. **Formulas and Code**:
+   - DO NOT use LaTeX ($ or $$ delimiters). Use clean plain text, unicode characters (e.g., θ, λ, ∑, ², ³, →, ↔), or inline code (` `) instead.
+   - For code or pseudo-code, always specify language tags (e.g. ```python, ```html, ```c).
+
+6. **For Question Paper & Repeated Questions Queries**:
+   - Group questions by frequency (High Frequency, Medium Frequency, Once Asked).
+   - Include a summary table of Repeated Questions: `| Question | Marks | Frequency / Years | Unit / Topic |`.
+   - List detailed questions with their exact parts (Part A / Part B), marks, and exam periods.
 """
 
 def call_gemini_api(prompt: str) -> str:
@@ -410,13 +432,19 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
         # Search the folder on-the-fly for matching PDFs!
         folder_context = await search_files_in_folder(portion_query)
         
-        prompt = ""
+        prompt = f"### User Academic Query / Question:\n{portion_query}\n\n"
         if folder_context:
-            prompt += f"{folder_context}\n\n"
-            prompt += f"The above text was extracted directly from the PDFs in the 'coe materials' folder matching the query.\n"
+            prompt += f"### Reference Materials Context (Extracted from course PDFs):\n{folder_context}\n\n"
         
-        prompt += f"User Question: {portion_query}\n\n"
-        prompt += f"Please answer the user's question directly and comprehensively. If context from PDFs was provided above, use it to analyze and answer the question."
+        prompt += (
+            "### REQUIRED RESPONSE STRUCTURE:\n"
+            "Please deliver a comprehensive, structured response formatted in clean Markdown:\n"
+            "1. `## 📌 Overview / Definition` (Clear explanation with core context)\n"
+            "2. `## 📋 Key Concepts & Breakdown` (Use bold bullet points like `- **Concept**: Explanation...`)\n"
+            "3. `## 📊 Comparison / Summary Table` (Use a clean Markdown table with headers `| Key Aspect | Description / Detail |` where applicable)\n"
+            "4. `## 💡 Exam Tips & Key Takeaways` (Use a blockquote `> 💡 **Tip:** ...`)\n\n"
+            "Keep line breaks spacious and clean between paragraphs and sections. DO NOT clump text together."
+        )
         
         provider = "Google Gemini"
         analysis_result = ""
@@ -471,11 +499,15 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
             prompt += f"{folder_context}\n\n"
             prompt += "The above text was extracted directly from the official curriculum and syllabus PDFs in the 'curriculum and syllabus' folder.\n\n"
             
-        prompt += f"User Syllabus Query: {portion_query}\n\n"
+        prompt += f"### User Syllabus Query:\n{portion_query}\n\n"
         prompt += (
-            "Please answer the user's syllabus-related query comprehensively and clearly. "
-            "Focus on unit topic breakdowns, course objectives, learning outcomes, credit distribution, and syllabus topics where applicable. "
-            "Organize your response with clear Markdown headings, bullet points, and unit details."
+            "### REQUIRED RESPONSE STRUCTURE:\n"
+            "Format your response in clean, organized Markdown:\n"
+            "1. `## 📚 Course & Curriculum Details` (Code, Title, Regulation)\n"
+            "2. `## 📑 Unit Breakdown & Topics` (List each unit with `- **Topic**: Details`)\n"
+            "3. `## 🎯 Course Objectives & Expected Outcomes`\n"
+            "4. `## 📊 Structure / Hours / Scheme` (Markdown table if available)\n\n"
+            "Keep line breaks spacious and clean between paragraphs and sections."
         )
         
         provider = "Google Gemini"
@@ -513,13 +545,20 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
         print(f"Course {course_code} not found in DB. Performing direct folder search...")
         folder_context = await search_files_in_folder(course_code + " " + (portion_query or ""), course_code=course_code)
         
-        prompt = ""
+        prompt = f"### Course Context ({course_code})\n"
         if folder_context:
             prompt += f"{folder_context}\n\n"
             prompt += f"The above text was extracted directly from the PDFs in the 'coe materials' folder matching course code {course_code}.\n"
         
-        prompt += f"Syllabus Portion / Query: {portion_query if portion_query else 'Analyze repeated questions'}\n\n"
-        prompt += f"Please analyze and answer the query using the PDF text provided above. Identify repeated questions, marks, and trends for this course."
+        prompt += f"### User Query:\n{portion_query if portion_query else 'Analyze repeated questions'}\n\n"
+        prompt += (
+            "### REQUIRED RESPONSE STRUCTURE:\n"
+            "Format your response in clean, organized Markdown:\n"
+            "1. `## 📌 Overview / Course Summary`\n"
+            "2. `## 📊 Repeated / Important Questions Table` (`| Question | Marks | Frequency / Appears In | Unit / Topic |`)\n"
+            "3. `## 📋 Detailed Questions Breakdown` (Grouped with bold bullets)\n"
+            "4. `## 💡 Exam Preparation Strategy` (Blockquote tips)"
+        )
         
         provider = "Google Gemini"
         analysis_result = ""
@@ -551,14 +590,20 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
         print(f"No questions in DB for {course_code}. Running direct folder search...")
         folder_context = await search_files_in_folder(course_code + " " + (portion_query or ""), course_code=course_code)
         
-        prompt = ""
+        prompt = f"### Course Details\nCourse Code: {course_code}\nCourse Name: {course_name}\n\n"
         if folder_context:
             prompt += f"{folder_context}\n\n"
             prompt += f"The above text was extracted directly from the PDFs in the 'coe materials' folder.\n"
         
-        prompt += f"### Course Details\nCourse Code: {course_code}\nCourse Name: {course_name}\n\n"
-        prompt += f"Query: {portion_query if portion_query else 'Analyze repeated questions'}\n\n"
-        prompt += f"**INSTRUCTION**: Address the query. If they ask for repeated questions, analyze the raw PDF text provided above to identify and list the repeated questions, marks, and exam periods."
+        prompt += f"### User Query:\n{portion_query if portion_query else 'Analyze repeated questions'}\n\n"
+        prompt += (
+            "### REQUIRED RESPONSE STRUCTURE:\n"
+            "Format your response in clean Markdown with:\n"
+            "1. `## 📌 Overview`\n"
+            "2. `## 📊 Repeated Questions Summary Table` (`| Question | Marks | Frequency / Appears In | Unit / Topic |`)\n"
+            "3. `## 📋 High-Priority Questions Breakdown` (Part A & Part B with bold bullets)\n"
+            "4. `## 💡 Exam Tips & Core Focus Areas` (Blockquotes)"
+        )
         
         provider = "Google Gemini"
         analysis_result = ""
@@ -585,14 +630,12 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
     
     if portion_query:
         # User specified a unit or topic, e.g. "Unit 1" or "HTML"
-        # Let's see if we can find a matching unit in portions
         matched_portion = None
         
         # Check if they wrote something like "Unit 1", "Unit I", "Unit 2", etc.
         unit_match = re.search(r'(?:unit|module)\s*([0-9]+|[i|v|x]+)', portion_query, re.IGNORECASE)
         if unit_match:
             unit_val = unit_match.group(1).upper()
-            # Try to resolve roman numerals or standard numbers
             roman_map = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5}
             unit_num = roman_map.get(unit_val)
             if unit_num:
@@ -633,7 +676,6 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
         prompt += f"Syllabus Content for this portion:\n{target_portion_text}\n\n"
         prompt += f"**INSTRUCTION**: Focus the analysis primarily on questions that match the above portion's syllabus. If a question is not related to this portion, filter it out.\n\n"
     else:
-        # Provide general syllabus for mapping
         prompt += f"### Full Course Syllabus\n"
         for p in portions:
             prompt += f"Unit {p['unit_number']}: {p['unit_title']}\nSyllabus: {p['unit_content']}\n\n"
@@ -643,9 +685,23 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
     prompt += f"### User Request / Question\n"
     if portion_query:
         prompt += f"Question/Request: {portion_query}\n\n"
-        prompt += f"**INSTRUCTION**: Address the user's request. If it is a query asking for an explanation or summary of a concept, answer it directly using the syllabus units content as your context. If it is a request for exam questions or patterns, analyze the questions list above to identify repeated questions, marks, and trends."
     else:
-        prompt += f"Please analyze and extract all the important, repeated questions across the entire course.\n"
+        prompt += f"Question/Request: Extract and analyze all the important, repeated questions across the entire course.\n\n"
+        
+    prompt += (
+        "### MANDATORY RESPONSE STRUCTURE:\n"
+        "1. If this is a question analysis / repeated questions request:\n"
+        "   - `## 📊 Repeated Questions Summary Table` with columns: `| Question | Marks | Frequency / Appears In | Unit / Topic |`.\n"
+        "   - `## 🔥 High-Priority / Most Repeated Questions (Part A & Part B)` with detailed breakdowns.\n"
+        "   - `## 📌 Unit-Wise Key Topics to Focus On`.\n"
+        "   - `## 💡 High-Scoring Exam Strategy & Tips` (in blockquotes).\n"
+        "2. If this is an explanation / syllabus concept request:\n"
+        "   - `## 📌 Overview / Definition`\n"
+        "   - `## 📋 Core Concepts & Detailed Breakdown` (use bold bullet points `- **Topic**: Details`)\n"
+        "   - `## 📊 Summary / Comparison Table` (if comparing concepts or architectures)\n"
+        "   - `## 💡 Exam Tips & Takeaways`\n\n"
+        "Maintain clean spacing and double line breaks between paragraphs and list items. NEVER output unstructured walls of text."
+    )
 
     # 6. Execute with Fallback logic
     provider = "Google Gemini"

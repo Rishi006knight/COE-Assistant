@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { 
   RefreshCw, 
   Send, 
@@ -7,7 +8,11 @@ import {
   Server,
   Search,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  Copy,
+  Check,
+  Bot,
+  User
 } from 'lucide-react'
 
 export default function App() {
@@ -23,6 +28,7 @@ export default function App() {
   const [selectedDepartment, setSelectedDepartment] = useState('All')
   const [portionQuery, setPortionQuery] = useState('')
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false)
+  const [copiedId, setCopiedId] = useState(null)
   
   // Chat History: array of { id, sender: 'user'|'ai', text: string, provider?: string, timestamp: string }
   const [messages, setMessages] = useState([])
@@ -166,6 +172,17 @@ export default function App() {
       if (pollingRef.current) clearInterval(pollingRef.current)
     }
   }, [])
+
+  // Copy message text to clipboard
+  const handleCopyMessage = async (msgId, text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedId(msgId)
+      setTimeout(() => setCopiedId(null), 2000)
+    } catch (err) {
+      console.error("Failed to copy text: ", err)
+    }
+  }
 
   // Quick preset queries helper
   const applyPreset = (text) => {
@@ -477,12 +494,75 @@ export default function App() {
                   messages.map((msg) => (
                     <div key={msg.id} className={`chat-message-row ${msg.sender}`}>
                       <div className={`message-bubble ${msg.sender}`}>
+                        <div className="message-header-bar">
+                          <div className="message-sender-meta">
+                            {msg.sender === 'ai' ? (
+                              <>
+                                <span className="sender-avatar ai">
+                                  <Sparkles size={13} />
+                                </span>
+                                <span className="sender-name">COE Academic AI</span>
+                                {msg.courseName && (
+                                  <span className="msg-course-tag">{msg.courseName}</span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <span className="sender-avatar user">
+                                  <User size={13} />
+                                </span>
+                                <span className="sender-name">You</span>
+                                {msg.courseContext && (
+                                  <span className="msg-course-tag">{msg.courseContext}</span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <div className="message-actions-meta">
+                            <span className="message-time">{msg.timestamp}</span>
+                            {msg.sender === 'ai' && (
+                              <button 
+                                type="button"
+                                className="copy-msg-btn"
+                                onClick={() => handleCopyMessage(msg.id, msg.text)}
+                                title="Copy response to clipboard"
+                              >
+                                {copiedId === msg.id ? (
+                                  <>
+                                    <Check size={12} className="copy-icon success" />
+                                    <span>Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy size={12} className="copy-icon" />
+                                    <span>Copy</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
                         {msg.sender === 'ai' ? (
                           <div className="markdown-body">
-                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({ node, ...props }) => (
+                                  <div className="table-responsive-wrapper">
+                                    <table {...props} />
+                                  </div>
+                                ),
+                                a: ({ node, ...props }) => (
+                                  <a target="_blank" rel="noopener noreferrer" {...props} />
+                                )
+                              }}
+                            >
+                              {msg.text}
+                            </ReactMarkdown>
                           </div>
                         ) : (
-                          <div>{msg.text}</div>
+                          <div className="user-message-text">{msg.text}</div>
                         )}
                       </div>
                     </div>
