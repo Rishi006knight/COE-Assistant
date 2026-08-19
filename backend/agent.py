@@ -25,7 +25,7 @@ Your goal is to provide exceptionally clear, beautifully structured, and compreh
 ### CRITICAL FORMATTING & STRUCTURE RULES:
 1. **Always Use Clean Markdown Structure**:
    - Organize every response with clear headings (e.g. `## 📌 Overview`, `## 📋 Key Concepts`, `## 📊 Comparison / Analysis`, `## 💡 Exam Tips & Key Takeaways`).
-   - Use double line breaks between paragraphs, list items, and sections to ensure clean visual separation.
+   - Ensure clean paragraph spacing and section separation.
    
 2. **Use Structured Tables**:
    - Whenever comparing concepts, summarizing topics, or listing question frequencies and marks, ALWAYS format them as clean Markdown tables with header rows (`| Header 1 | Header 2 | Header 3 |`).
@@ -443,7 +443,7 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
             "2. `## 📋 Key Concepts & Breakdown` (Use bold bullet points like `- **Concept**: Explanation...`)\n"
             "3. `## 📊 Comparison / Summary Table` (Use a clean Markdown table with headers `| Key Aspect | Description / Detail |` where applicable)\n"
             "4. `## 💡 Exam Tips & Key Takeaways` (Use a blockquote `> 💡 **Tip:** ...`)\n\n"
-            "Keep line breaks spacious and clean between paragraphs and sections. DO NOT clump text together."
+            "Ensure clean spacing between paragraphs and sections. DO NOT clump text together."
         )
         
         provider = "Google Gemini"
@@ -507,7 +507,7 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
             "2. `## 📑 Unit Breakdown & Topics` (List each unit with `- **Topic**: Details`)\n"
             "3. `## 🎯 Course Objectives & Expected Outcomes`\n"
             "4. `## 📊 Structure / Hours / Scheme` (Markdown table if available)\n\n"
-            "Keep line breaks spacious and clean between paragraphs and sections."
+            "Ensure clean spacing between paragraphs and sections."
         )
         
         provider = "Google Gemini"
@@ -700,7 +700,7 @@ async def analyze_course_questions(course_code: str = None, portion_query: str =
         "   - `## 📋 Core Concepts & Detailed Breakdown` (use bold bullet points `- **Topic**: Details`)\n"
         "   - `## 📊 Summary / Comparison Table` (if comparing concepts or architectures)\n"
         "   - `## 💡 Exam Tips & Takeaways`\n\n"
-        "Maintain clean spacing and double line breaks between paragraphs and list items. NEVER output unstructured walls of text."
+        "Maintain clean spacing between paragraphs and list items. NEVER output unstructured walls of text."
     )
 
     # 6. Execute with Fallback logic
